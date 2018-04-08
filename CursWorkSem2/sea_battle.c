@@ -15,32 +15,31 @@
 
 typedef struct map 
 {
-	int matrix_battle[FIELDSIZE][FIELDSIZE];	
-	int count_ships;
+	char matrix_battle[FIELDSIZE][FIELDSIZE];	
 } Map;
 
 typedef struct battle_ship
 {
 	int coordinate[4][2];
-	int health;
+	int health[4];
 } BattleShip;
 
 typedef struct cruiser
 {
 	int coordinate[3][2];
-	int health;
+	int health[3];
 } Cruiser;
 
 typedef struct destroyer
 {
 	int coordinate[2][2];
-	int health;
+	int health[2];
 } Destroyer;
 
 typedef struct torpedo_boat
 {
 	int coordinate[1][2];
-	int health;
+	int health[1];
 } TorpedoBoat;
 
 
@@ -65,9 +64,100 @@ void InitializeMap(Map *pmap)
 
 	for(int i = 0; i < FIELDSIZE; ++i)
 		for(int j = 0; j < FIELDSIZE; ++j)
-			pmap->matrix_battle[i][j] = 0;
-	
-	pmap->count_ships = COUNTSHIP;
+			pmap->matrix_battle[i][j] = '0';
+}
+
+void PrintMap(const Map * pmap)
+{
+	if(PointerIsNull(pmap))
+		return;
+
+	printf("  "); //two space for first index in top line
+	for(int i = 0; i < FIELDSIZE; ++i)
+		printf("%c ", index_rows[i]);
+	printf("\n");
+
+	for(int i = 0; i < FIELDSIZE; ++i)
+	{
+		printf("%c ", rows[i]);
+		for(int j = 0; j < FIELDSIZE; ++j)
+			printf("%c ", pmap->matrix_battle[i][j]);
+		printf("\n");
+	}
+}
+
+
+void ChangeMap(Map *pmap, BattleShip *pbattle_ship, Cruiser *pcruiser, Destroyer *pdestroyer, TorpedoBoat *ptorpedo_boat)
+{
+	for(int i = 0; i < 1; ++i)
+		for(int j = 0; j < 4; ++j)
+		{
+			int x = pbattle_ship[i].coordinate[j][0];
+			int y = pbattle_ship[i].coordinate[j][1];
+
+			switch(pbattle_ship[i].health[j])
+			{
+				case 1:
+					pmap->matrix_battle[x][y] = '+';
+					break;
+				case 0:
+					pmap->matrix_battle[x][y] = 'X';
+					break;
+			}
+		}
+
+	for(int i = 0; i < 2; ++i)
+		for(int j = 0; j < 3; ++j)
+		{
+			int x = pcruiser[i].coordinate[j][0];
+			int y = pcruiser[i].coordinate[j][1];
+
+			switch(pcruiser[i].health[j])
+			{
+				case 1:
+					pmap->matrix_battle[x][y] = '+';
+					break;
+				case 0:
+					pmap->matrix_battle[x][y] = 'X';
+					break;
+			}
+		}
+
+	for(int i = 0; i < 3; ++i)
+		for(int j = 0; j < 2; ++j)
+		{
+			int x = pdestroyer[i].coordinate[j][0];
+			int y = pdestroyer[i].coordinate[j][1];
+
+			switch(pdestroyer[i].health[j])
+			{
+				case 1:
+					pmap->matrix_battle[x][y] = '+';
+					break;
+				case 0:
+					pmap->matrix_battle[x][y] = 'X';
+					break;
+			}
+		}
+
+	for(int i = 0; i < 4; ++i)
+		for(int j = 0; j < 1; ++j)
+		{
+			int x = ptorpedo_boat[i].coordinate[j][0];
+			int y = ptorpedo_boat[i].coordinate[j][1];
+
+			switch(ptorpedo_boat[i].health[j])
+			{
+				case 1:
+					pmap->matrix_battle[x][y] = '+';
+					break;
+				case 0:
+					pmap->matrix_battle[x][y] = 'X';
+					break;
+			}
+		}
+
+
 }
 
 
@@ -79,26 +169,15 @@ int CharToIndex(char c)
 }
 
 
-void PrintMap(const Map * pmap)
-{
-	if(PointerIsNull(pmap))
-		return;
-
-	printf("  "); //two space for first index in top line
-	for(int i = 0; i < FIELDSIZE; ++i)
-		printf("%d ", index_rows[i]);
-	printf("\n");
-
-	for(int i = 0; i < FIELDSIZE; ++i)
+int OutOfRange(int x, int y)
+{if(x < 0 || x > 9 || y < 0 | y > 9)
 	{
-		printf("%c ", rows[i]);
-		for(int j = 0; j < FIELDSIZE; ++j)
-			printf("%d ", pmap->matrix_battle[i][j]);
-		printf("\n");
+		printf("Coordinate out of range!\n");
+		return 1;
 	}
+	else
+		return 0;
 }
-
-
 
 int main()
 {
@@ -106,33 +185,35 @@ int main()
 	InitializeMap(&user_map);
 	PrintMap(&user_map);
 	
-	BattleShip battle_ship[1];
-	Cruiser cruiser[2];
-	Destroyer destroyer[3];
-	TorpedoBoat torpedo_boat[4];
+	BattleShip user_battle_ship[1];
+	Cruiser user_cruiser[2];
+	Destroyer user_destroyer[3];
+	TorpedoBoat user_torpedo_boat[4];
 	
-	printf("Each coorinates line entered with new lines\n");
+	printf("Each coorinates line entered with new line\n");
 	printf("Please enter four coordinates for one battle ship to formate A1A2A3A4:\n");
-	
-	
+		
 	for(int i = 0; i < 1; ++i)
 	{
-		battle_ship[i].health = FOURDECK;
 		char col;
 		int row;
 	
 		for(int j = 0; j < 4; ++j)
 		{
+			user_battle_ship[i].health[j] = 1;
+
 			if(scanf("%c%d", &col, &row)!= 2)
 			{
 				printf("Error input!\n");
 				return 0;
 			}
+			if(OutOfRange(CharToIndex(toupper(col)), row))
+				return 0;
 			else
 			{
 				printf("[%c, %d]\n", col, row);
-				battle_ship[i].coordinate[j][0] = CharToIndex(toupper(col));
-				battle_ship[i].coordinate[j][1] = row;
+				user_battle_ship[i].coordinate[j][0] = CharToIndex(toupper(col));
+				user_battle_ship[i].coordinate[j][1] = row;
 			}
 		}
 		getchar();
@@ -142,22 +223,25 @@ int main()
 
 	for(int i = 0; i < 2; ++i)
 	{
-		cruiser[i].health = THREEDECK;
 		char col;
 		int row;
 
 		for(int j = 0; j < 3; ++j)
 		{
+			user_cruiser[i].health[j] = 1;
+
 			if(scanf("%c%d", &col, &row)!= 2)
 			{
 				printf("Error input!\n");
 				return 0;
 			}
+			if(OutOfRange(CharToIndex(toupper(col)), row))
+				return 0;
 			else
 			{
 				printf("[%c, %d]\n", col, row);
-				cruiser[i].coordinate[j][0] = CharToIndex(toupper(col));
-				cruiser[i].coordinate[j][1] = row;
+				user_cruiser[i].coordinate[j][0] = CharToIndex(toupper(col));
+				user_cruiser[i].coordinate[j][1] = row;
 			}
 		}
 		getchar();
@@ -167,22 +251,25 @@ int main()
 
 	for(int i = 0; i < 3; ++i)
 	{
-		destroyer[i].health = TWODECK;
 		char col;
 		int row;
 
 		for(int j = 0; j < 2; ++j)
 		{
+			user_destroyer[i].health[j] = 1;
+
 			if(scanf("%c%d", &col, &row)!= 2)
 			{
 				printf("Error input!\n");
 				return 0;
 			}
+			if(OutOfRange(CharToIndex(toupper(col)), row))
+				return 0;
 			else
 			{
 				printf("[%c, %d]\n", col, row);
-				destroyer[i].coordinate[j][0] = CharToIndex(toupper(col));
-				destroyer[i].coordinate[j][1] = row;
+				user_destroyer[i].coordinate[j][0] = CharToIndex(toupper(col));
+				user_destroyer[i].coordinate[j][1] = row;
 			}
 		}
 		getchar();
@@ -192,27 +279,33 @@ int main()
 
 	for(int i = 0; i < 4; ++i)
 	{
-		torpedo_boat[i].health = TWODECK;
 		char col;
 		int row;
 
 		for(int j = 0; j < 1; ++j)
 		{
+			user_torpedo_boat[i].health[j] = 1;
+
 			if(scanf("%c%d", &col, &row)!= 2)
 			{
 				printf("Error input!\n");
 				return 0;
 			}
+			if(OutOfRange(CharToIndex(toupper(col)), row))
+				return 0;
 			else
 			{
 				printf("[%c, %d]\n", col, row);
-				torpedo_boat[i].coordinate[j][0] = CharToIndex(toupper(col));
-				torpedo_boat[i].coordinate[j][1] = row;
+				user_torpedo_boat[i].coordinate[j][0] = CharToIndex(toupper(col));
+				user_torpedo_boat[i].coordinate[j][1] = row;
 			}
 		}
 		getchar();
 	}
+	
 
+	ChangeMap(&user_map, &user_battle_ship[0], &user_cruiser[0], &user_destroyer[0], &user_torpedo_boat[0]);
+	PrintMap(&user_map);
 
 	return 0;
 }
