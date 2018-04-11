@@ -3,6 +3,9 @@
 #include <stdlib.h>
 #include <string.h>
 #include <ctype.h>
+#include <time.h>
+
+#include "enemy_ships.h"
 
 #define FIELDSIZE 10
 #define COUNTSHIP 4
@@ -12,6 +15,7 @@
 #define TWODECK 3
 #define ONEDECK 4
 
+#define COUNTCELLOFSHIPS 20
 
 typedef struct map 
 {
@@ -46,6 +50,8 @@ typedef struct torpedo_boat
 char const rows[FIELDSIZE] = {'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J'};
 int const index_rows[FIELDSIZE] = {0, 1, 2, 3, 4, 5, 6, 7, 8, 9};
 
+
+
 int PointerIsNull(const void *p)
 {
 	if(p == NULL)
@@ -74,7 +80,7 @@ void PrintMap(const Map * pmap)
 
 	printf("  "); //two space for first index in top line
 	for(int i = 0; i < FIELDSIZE; ++i)
-		printf("%c ", index_rows[i]);
+		printf("%d ", index_rows[i]);
 	printf("\n");
 
 	for(int i = 0; i < FIELDSIZE; ++i)
@@ -86,6 +92,47 @@ void PrintMap(const Map * pmap)
 	}
 }
 
+
+void InitializeEnemyShips(BattleShip *pbattle_ship, Cruiser *pcruiser, Destroyer *pdestroyer, TorpedoBoat *ptorpedo_boat)
+{
+	srand(time(NULL));
+//	int index = ((unsigned int)rand()) % 3;
+	int index = 0;
+
+	for(int i = 0; i < 1; i++)
+	{
+		for(int j = 0; j < 4; ++j)
+		{
+			pbattle_ship[i].health[j] = 1;
+			pbattle_ship[i].coordinate[j][0] = coordinate_battle_ships[index][j][0];
+			pbattle_ship[i].coordinate[j][1] = coordinate_battle_ships[index][j][1];
+		}	
+	}	
+	
+	for(int i = 0; i < 2; i++)
+		for(int j = 0; j < 3; ++j)
+		{
+			pcruiser[i].health[j] = 1;
+			pcruiser[i].coordinate[j][0] = coordinate_cruiser[index][i][j][0];
+			pcruiser[i].coordinate[j][1] = coordinate_cruiser[index][i][j][1];
+		}
+
+	for(int i = 0; i < 3; i++)
+		for(int j = 0; j < 2; ++j)
+		{
+			pdestroyer[i].health[j] = 1;
+			pdestroyer[i].coordinate[j][0] = coordinate_destroyer[index][i][j][0];
+			pdestroyer[i].coordinate[j][1] = coordinate_destroyer[index][i][j][1];
+		}
+
+	for(int i = 0; i < 4; i++)
+		for(int j = 0; j < 1; ++j)
+		{
+			ptorpedo_boat[i].health[j] = 1;
+			ptorpedo_boat[i].coordinate[j][0] = coordinate_torpedo_boat[index][i][j][0];
+			ptorpedo_boat[i].coordinate[j][1] = coordinate_torpedo_boat[index][i][j][1];
+		}	
+}
 
 void ChangeMap(Map *pmap, BattleShip *pbattle_ship, Cruiser *pcruiser, Destroyer *pdestroyer, TorpedoBoat *ptorpedo_boat)
 {
@@ -161,6 +208,148 @@ void ChangeMap(Map *pmap, BattleShip *pbattle_ship, Cruiser *pcruiser, Destroyer
 }
 
 
+int CorrectCoordinates(int coordinate[2][2], int deck)
+{	
+	int vertical_flag = 0;
+	int horisontal_flag = 0;
+
+	if(coordinate[0][0] == coordinate[1][0])
+		horisontal_flag = 1;
+	else if(coordinate[0][1] == coordinate[1][1])
+		vertical_flag = 1;
+	if(horisontal_flag && vertical_flag)
+		return 0;
+	
+	if(vertical_flag)
+		for(int i = 0; i < deck - 1; ++i)
+		{
+			int dx = coordinate[i][0] - coordinate[i + 1][0];
+			if(coordinate[i][1]!= coordinate[i + 1][1] || (dx!= 1 && dx!= -1))
+				return 0;
+		}
+	if(horisontal_flag)
+		for(int i = 0; i < deck - 1; ++i)
+		{
+			int dy = coordinate[i][1] - coordinate[i + 1][1];
+			if(coordinate[i][0]!= coordinate[i + 1][0] || (dy!= 1 && dy!= -1))
+				return 0;
+		}
+	
+	return 1;
+}
+
+
+
+
+int CorrectShips(BattleShip *pbattle_ship, Cruiser *pcruiser, Destroyer *pdestroyer)
+{
+	for(int i = 0; i < 1; ++i)
+		if(!CorrectCoordinates(pbattle_ship[i].coordinate, 4))
+			return 0;
+
+	for(int i = 0; i < 2; ++i)
+		if(!CorrectCoordinates(pcruiser[i].coordinate, 3))
+			return 0;
+	
+	for(int i = 0; i < 3; ++i)
+		if(!CorrectCoordinates(pdestroyer[i].coordinate, 2))
+			return 0;
+
+	return 1;
+}
+
+
+int CorrectInsert(Map *pmap)
+{
+	int count_cell = 0;
+
+	for(int i = 0; i < FIELDSIZE; ++i)
+		for(int j = 0; j < FIELDSIZE; ++j)
+			if(pmap->matrix_battle[i][j] == '+')
+				++count_cell;
+		
+	if(count_cell == COUNTCELLOFSHIPS)
+		return 1;
+	else
+		return 0;
+}
+
+
+int DestroyedShip(int health[1], int deck)
+{
+	int destroy_flag = 0;
+
+	for(int i = 0; i < deck; ++i)
+		destroy_flag += health[i];
+	if(!destroy_flag)
+		return 1;
+	else
+		return 0;
+}
+
+int ChangeHealthShip(BattleShip *pbattle_ship, Cruiser *pcruiser, Destroyer *pdestroyer, TorpedoBoat *ptorpedo_boat, 
+		     int shot[2])
+{
+	int x = shot[0];
+	int y = shot[1];
+
+	for(int i = 0; i < 1; ++i)
+		for(int j = 0; j < 4; ++j)
+			if(pbattle_ship[i].coordinate[j][0] == x && pbattle_ship[i].coordinate[j][1] == y)
+			{
+				pbattle_ship[i].health[j] = 0;
+				if(DestroyedShip(pbattle_ship[i].health, 4))
+					return 1;
+			}
+
+	for(int i = 0; i < 2; ++i)
+		for(int j = 0; j < 3; ++j)
+			if(pcruiser[i].coordinate[j][0] == x && pcruiser[i].coordinate[j][1] == y)
+			{
+				pcruiser[i].health[j] = 0;
+				if(DestroyedShip(pcruiser[i].health, 3))
+					return 1;
+			}
+
+	for(int i = 0; i < 3; ++i)
+		for(int j = 0; j < 2; ++j)
+			if(pdestroyer[i].coordinate[j][0] == x && pdestroyer[i].coordinate[j][1] == y)
+			{
+				pdestroyer[i].health[j] = 0;
+				if(DestroyedShip(pdestroyer[i].health, 2))
+					return 1;
+			}
+
+	for(int i = 0; i < 4; ++i)
+		for(int j = 0; j < 1; ++j)
+			if(ptorpedo_boat[i].coordinate[j][0] == x && ptorpedo_boat[i].coordinate[j][1] == y)
+			{
+				ptorpedo_boat[i].health[j] = 0;
+				if(DestroyedShip(ptorpedo_boat[i].health, 1))
+					return 1;
+			}
+	return 0;
+}
+
+
+int MarkShotOnMap(Map *pmap, int shot[2])
+{
+	int x = shot[0];
+	int y = shot[1];
+
+	if(pmap->matrix_battle[x][y] == '+')
+	{
+		pmap->matrix_battle[x][y] = 'X'; 
+		return 1;
+	}
+	else if(pmap->matrix_battle[x][y] == '0')
+		pmap->matrix_battle[x][y] = 'x';
+
+	return 0;
+}
+
+
+
 int CharToIndex(char c)
 {
 	for(int i = 0; i < FIELDSIZE; ++i)
@@ -183,13 +372,27 @@ int main()
 {
 	Map user_map;
 	InitializeMap(&user_map);
-	PrintMap(&user_map);
+//	PrintMap(&user_map);
 	
 	BattleShip user_battle_ship[1];
 	Cruiser user_cruiser[2];
 	Destroyer user_destroyer[3];
 	TorpedoBoat user_torpedo_boat[4];
+
+
+	Map enemy_map;
+	InitializeMap(&enemy_map);
+
+	BattleShip enemy_battle_ship[1];
+	Cruiser enemy_cruiser[2];
+	Destroyer enemy_destroyer[3];
+	TorpedoBoat enemy_torpedo_boat[4];
 	
+	//Initialize by one of three random pack in file enemy_ship.h and change enemy map
+	InitializeEnemyShips(&enemy_battle_ship[0], &enemy_cruiser[0], &enemy_destroyer[0], &enemy_torpedo_boat[0]);
+	ChangeMap(&enemy_map, &enemy_battle_ship[0], &enemy_cruiser[0], &enemy_destroyer[0], &enemy_torpedo_boat[0]);
+
+
 	printf("Each coorinates line entered with new line\n");
 	printf("Please enter four coordinates for one battle ship to formate A1A2A3A4:\n");
 		
@@ -302,10 +505,26 @@ int main()
 		}
 		getchar();
 	}
-	
 
+	
 	ChangeMap(&user_map, &user_battle_ship[0], &user_cruiser[0], &user_destroyer[0], &user_torpedo_boat[0]);
+	ChangeMap(&enemy_map, &enemy_battle_ship[0], &enemy_cruiser[0], &enemy_destroyer[0], &enemy_torpedo_boat[0]);
+	printf("Our map:\n");
 	PrintMap(&user_map);
+	printf("Enemy map:\n");
+	PrintMap(&enemy_map);
+
+	//Check for correct coordinate of ships
+	if(CorrectInsert(&user_map))
+		printf("Ships no insert between each other\n");
+	else
+		printf("Ships insert between each other!\n");	
+	if(CorrectShips(&user_battle_ship[0], &user_cruiser[0], &user_destroyer[0]))
+		printf("Correct coordinates of ships\n");
+	else
+		printf("Incorrect coordinates of ships!\n");
+
+
 
 	return 0;
 }
