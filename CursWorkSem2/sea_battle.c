@@ -17,6 +17,10 @@
 
 #define COUNTCELLOFSHIPS 20
 
+#define HIJACKING 1
+#define DESTROYED 2
+
+
 typedef struct map 
 {
 	char matrix_battle[FIELDSIZE][FIELDSIZE];	
@@ -97,7 +101,7 @@ void InitializeEnemyShips(BattleShip *pbattle_ship, Cruiser *pcruiser, Destroyer
 {
 	srand(time(NULL));
 //	int index = ((unsigned int)rand()) % 3;
-	int index = 0;
+	int index = 1;
 
 	for(int i = 0; i < 1; i++)
 	{
@@ -134,6 +138,8 @@ void InitializeEnemyShips(BattleShip *pbattle_ship, Cruiser *pcruiser, Destroyer
 		}	
 }
 
+
+//Mark ships coordinate by + on map
 void ChangeMap(Map *pmap, BattleShip *pbattle_ship, Cruiser *pcruiser, Destroyer *pdestroyer, TorpedoBoat *ptorpedo_boat)
 {
 	for(int i = 0; i < 1; ++i)
@@ -141,16 +147,7 @@ void ChangeMap(Map *pmap, BattleShip *pbattle_ship, Cruiser *pcruiser, Destroyer
 		{
 			int x = pbattle_ship[i].coordinate[j][0];
 			int y = pbattle_ship[i].coordinate[j][1];
-
-			switch(pbattle_ship[i].health[j])
-			{
-				case 1:
-					pmap->matrix_battle[x][y] = '+';
-					break;
-				case 0:
-					pmap->matrix_battle[x][y] = 'X';
-					break;
-			}
+			pmap->matrix_battle[x][y] = '+';
 		}
 
 	for(int i = 0; i < 2; ++i)
@@ -158,16 +155,7 @@ void ChangeMap(Map *pmap, BattleShip *pbattle_ship, Cruiser *pcruiser, Destroyer
 		{
 			int x = pcruiser[i].coordinate[j][0];
 			int y = pcruiser[i].coordinate[j][1];
-
-			switch(pcruiser[i].health[j])
-			{
-				case 1:
-					pmap->matrix_battle[x][y] = '+';
-					break;
-				case 0:
-					pmap->matrix_battle[x][y] = 'X';
-					break;
-			}
+			pmap->matrix_battle[x][y] = '+';
 		}
 
 	for(int i = 0; i < 3; ++i)
@@ -175,16 +163,7 @@ void ChangeMap(Map *pmap, BattleShip *pbattle_ship, Cruiser *pcruiser, Destroyer
 		{
 			int x = pdestroyer[i].coordinate[j][0];
 			int y = pdestroyer[i].coordinate[j][1];
-
-			switch(pdestroyer[i].health[j])
-			{
-				case 1:
-					pmap->matrix_battle[x][y] = '+';
-					break;
-				case 0:
-					pmap->matrix_battle[x][y] = 'X';
-					break;
-			}
+			pmap->matrix_battle[x][y] = '+';
 		}
 
 	for(int i = 0; i < 4; ++i)
@@ -192,16 +171,7 @@ void ChangeMap(Map *pmap, BattleShip *pbattle_ship, Cruiser *pcruiser, Destroyer
 		{
 			int x = ptorpedo_boat[i].coordinate[j][0];
 			int y = ptorpedo_boat[i].coordinate[j][1];
-
-			switch(ptorpedo_boat[i].health[j])
-			{
-				case 1:
-					pmap->matrix_battle[x][y] = '+';
-					break;
-				case 0:
-					pmap->matrix_battle[x][y] = 'X';
-					break;
-			}
+			pmap->matrix_battle[x][y] = '+';
 		}
 
 
@@ -299,7 +269,9 @@ int ChangeHealthShip(BattleShip *pbattle_ship, Cruiser *pcruiser, Destroyer *pde
 			{
 				pbattle_ship[i].health[j] = 0;
 				if(DestroyedShip(pbattle_ship[i].health, 4))
-					return 1;
+					return DESTROYED;
+				else 
+					return HIJACKING;
 			}
 
 	for(int i = 0; i < 2; ++i)
@@ -308,7 +280,9 @@ int ChangeHealthShip(BattleShip *pbattle_ship, Cruiser *pcruiser, Destroyer *pde
 			{
 				pcruiser[i].health[j] = 0;
 				if(DestroyedShip(pcruiser[i].health, 3))
-					return 1;
+					return DESTROYED;
+				else 
+					return HIJACKING;
 			}
 
 	for(int i = 0; i < 3; ++i)
@@ -317,7 +291,9 @@ int ChangeHealthShip(BattleShip *pbattle_ship, Cruiser *pcruiser, Destroyer *pde
 			{
 				pdestroyer[i].health[j] = 0;
 				if(DestroyedShip(pdestroyer[i].health, 2))
-					return 1;
+					return DESTROYED;
+				else 
+					return HIJACKING;
 			}
 
 	for(int i = 0; i < 4; ++i)
@@ -326,7 +302,9 @@ int ChangeHealthShip(BattleShip *pbattle_ship, Cruiser *pcruiser, Destroyer *pde
 			{
 				ptorpedo_boat[i].health[j] = 0;
 				if(DestroyedShip(ptorpedo_boat[i].health, 1))
-					return 1;
+					return DESTROYED;
+				else
+					return HIJACKING;
 			}
 	return 0;
 }
@@ -359,7 +337,8 @@ int CharToIndex(char c)
 
 
 int OutOfRange(int x, int y)
-{if(x < 0 || x > 9 || y < 0 | y > 9)
+{
+	if(x < 0 || x > 9 || y < 0 | y > 9)
 	{
 		printf("Coordinate out of range!\n");
 		return 1;
@@ -391,7 +370,6 @@ int main()
 	//Initialize by one of three random pack in file enemy_ship.h and change enemy map
 	InitializeEnemyShips(&enemy_battle_ship[0], &enemy_cruiser[0], &enemy_destroyer[0], &enemy_torpedo_boat[0]);
 	ChangeMap(&enemy_map, &enemy_battle_ship[0], &enemy_cruiser[0], &enemy_destroyer[0], &enemy_torpedo_boat[0]);
-
 
 	printf("Each coorinates line entered with new line\n");
 	printf("Please enter four coordinates for one battle ship to formate A1A2A3A4:\n");
@@ -508,7 +486,6 @@ int main()
 
 	
 	ChangeMap(&user_map, &user_battle_ship[0], &user_cruiser[0], &user_destroyer[0], &user_torpedo_boat[0]);
-	ChangeMap(&enemy_map, &enemy_battle_ship[0], &enemy_cruiser[0], &enemy_destroyer[0], &enemy_torpedo_boat[0]);
 	printf("Our map:\n");
 	PrintMap(&user_map);
 	printf("Enemy map:\n");
@@ -523,6 +500,87 @@ int main()
 		printf("Correct coordinates of ships\n");
 	else
 		printf("Incorrect coordinates of ships!\n");
+	
+	//Battle progress
+	int count_user_ships = 10;
+	int count_enemy_ships = 10;
+	int user_hit = 1;
+	int enemy_hit = 0;
+
+	srand(time(NULL));
+
+	while(count_user_ships && count_enemy_ships)
+	{
+		int row;
+		char col;
+		int shot[2];
+
+		if(enemy_hit)
+		{
+			shot[0] = ((unsigned int)rand()) % 10;
+			shot[1] = ((unsigned int)rand()) % 10;
+			printf("enemy_shot = (%u,%u) \n", shot[0], shot[1]);
+			MarkShotOnMap(&user_map, shot);
+
+			int course_res = ChangeHealthShip(&user_battle_ship[0], &user_cruiser[0], &user_destroyer[0], &user_torpedo_boat[0],shot);
+			if(course_res == DESTROYED)
+				--count_enemy_ships;
+			else if(!course_res)
+			{
+				enemy_hit = 0;
+				user_hit = 1;
+			}	
+
+			printf("User map:\n");
+			PrintMap(&user_map);
+		}
+	
+
+		if(user_hit)
+		{
+			printf("Enter coordinate of hit in format A1\n");
+			if(scanf("%c%d", &col, &row)!= 2)
+			{	
+				printf("%c%d\n", col, row);
+				printf("Incorrect coordinate!\n");
+				return 0;
+			}
+			getchar();
+		
+			shot[0] = CharToIndex(toupper(col));
+			shot[1] = row;
+			if(OutOfRange(shot[0], shot[1]))
+			{
+				printf("(%d, %d)\n", shot[0], shot[1]);
+				return 0;
+			}
+		
+			MarkShotOnMap(&enemy_map, shot); 
+			printf("Enemy map:\n");
+			PrintMap(&enemy_map);
+
+			//variable for check shot to hikacking to ship or destroyed to ship
+			int course_res = ChangeHealthShip(&enemy_battle_ship[0], &enemy_cruiser[0], &enemy_destroyer[0], &enemy_torpedo_boat[0],shot);
+			if(course_res == DESTROYED)
+				{
+				--count_enemy_ships;
+				printf("--------\nDestroyed!\n---------\n");
+				printf("count_enemy_ships = %d\n", count_enemy_ships);
+			}
+			else if(course_res == HIJACKING)
+				printf("--------\nHijackig!\n---------\n");
+			else
+			{
+				user_hit = 0;
+				enemy_hit = 1;
+			}
+		}
+	}
+	
+	if(!count_enemy_ships)
+		printf("--------\nYou win!\n----------");
+	else if(!count_user_ships)
+		printf("--------\nYou lose\n----------");
 
 
 
