@@ -1,0 +1,12 @@
+#pragma once
+#define FIELDSIZE 10
+#define COUNTSHIP 4
+
+#define COUNTFOURDECK 1
+#define COUNTTHREEDECK 2
+#define COUNTTWODECK 3
+#define COUNTONEDECK 4
+
+#define COUNTCELLOFSHIPS 20
+
+
