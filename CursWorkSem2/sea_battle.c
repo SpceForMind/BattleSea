@@ -310,22 +310,28 @@ int ChangeHealthShip(BattleShip *pbattle_ship, Cruiser *pcruiser, Destroyer *pde
 }
 
 
-int MarkShotOnMap(Map *pmap, int shot[2])
+void MarkShotOnMap(Map *pmap, int shot[2])
 {
 	int x = shot[0];
 	int y = shot[1];
 
 	if(pmap->matrix_battle[x][y] == '+')
-	{
 		pmap->matrix_battle[x][y] = 'X'; 
-		return 1;
-	}
 	else if(pmap->matrix_battle[x][y] == '0')
 		pmap->matrix_battle[x][y] = 'x';
-
-	return 0;
 }
 
+
+void MarkShotOnEnemyMap(Map *pmap, Map *pvisual_map, int shot[2])
+{
+	int x = shot[0];
+	int y = shot[1];
+	
+	if(pmap->matrix_battle[x][y] == '+')
+		pvisual_map->matrix_battle[x][y] = 'X';
+	else
+		pvisual_map->matrix_battle[x][y] = 'x';
+}
 
 
 int CharToIndex(char c)
@@ -333,6 +339,9 @@ int CharToIndex(char c)
 	for(int i = 0; i < FIELDSIZE; ++i)
 		if(c == rows[i])
 			return i;
+	
+	printf("Coordinate out of range A-J!\n");
+	exit(1);
 }
 
 
@@ -347,6 +356,83 @@ int OutOfRange(int x, int y)
 		return 0;
 }
 
+
+// Choise new hit for computer
+int RandomOffset()
+{
+	int r_num = (unsigned int)rand() % 10;
+	
+	if(r_num < 3 )
+		return 1;
+	else if(r_num >= 3 && r_num < 6 )
+		return 0;
+	else	
+		return 1;
+}
+
+void InitializeMatrixHits(int matrix_hits[FIELDSIZE][FIELDSIZE])
+{
+	for(int i = 0; i < FIELDSIZE; ++i)
+		for(int j = 0; j < FIELDSIZE; ++j)
+			matrix_hits[i][j] = 0;
+}
+
+void EnemyHit(int shot[2], int matrix_hits[FIELDSIZE][FIELDSIZE], int hijacking_flag)
+{
+	int x = shot[0];
+	int y = shot[1];
+	int new_hit_flag = 0;
+
+	if(!hijacking_flag)
+	{
+		while(!new_hit_flag)
+		{
+			x = ((unsigned int)rand()) % 10;
+			y = ((unsigned int)rand()) % 10;
+
+			if(matrix_hits[x][y] == 0)
+			{
+				matrix_hits[x][y] = 1;
+				new_hit_flag = 1;
+			}
+		}
+	}
+	else
+	{
+		int time_x = x;
+		int time_y = y;
+		int count_try = 40; //except, when around shot point look points yet
+
+		while(!new_hit_flag && count_try)
+		{
+			time_x = x + RandomOffset();
+			time_y = y + RandomOffset();
+			
+			if(!OutOfRange(time_x, time_y) && matrix_hits[time_x][time_y] == 0 &&(abs(x-time_x)!= abs(y-time_y)))
+			{
+				matrix_hits[time_x][time_y] = 1;
+				new_hit_flag = 1;
+				x = time_x;
+				y = time_y;
+				break;
+			}
+			--count_try;
+		}
+		if(!count_try)
+		{
+			x = ((unsigned int)rand()) % 10;
+			y = ((unsigned int)rand()) % 10;
+		}
+	}
+
+	shot[0] = x;
+	shot[1] = y;
+}
+
+
+
+
+
 int main()
 {
 	Map user_map;
@@ -360,7 +446,9 @@ int main()
 
 
 	Map enemy_map;
+	Map enemy_visual_map; //for incapsulation data of position the enemy ships
 	InitializeMap(&enemy_map);
+	InitializeMap(&enemy_visual_map);
 
 	BattleShip enemy_battle_ship[1];
 	Cruiser enemy_cruiser[2];
@@ -486,10 +574,8 @@ int main()
 
 	
 	ChangeMap(&user_map, &user_battle_ship[0], &user_cruiser[0], &user_destroyer[0], &user_torpedo_boat[0]);
-	printf("Our map:\n");
+	printf("Start user map:\n");
 	PrintMap(&user_map);
-	printf("Enemy map:\n");
-	PrintMap(&enemy_map);
 
 	//Check for correct coordinate of ships
 	if(CorrectInsert(&user_map))
@@ -504,9 +590,12 @@ int main()
 	//Battle progress
 	int count_user_ships = 10;
 	int count_enemy_ships = 10;
-	int user_hit = 1;
-	int enemy_hit = 0;
+	int user_hit = 1; 
+	int enemy_hit = 0; 
+	int matrix_hits[FIELDSIZE][FIELDSIZE]; //matrix for coordinates, which computer already select
+	int hijacking_flag = 0; //flag for next enemy hit(random point or around with some point)
 
+	InitializeMatrixHits(&matrix_hits[0]);
 	srand(time(NULL));
 
 	while(count_user_ships && count_enemy_ships)
@@ -517,25 +606,27 @@ int main()
 
 		if(enemy_hit)
 		{
-			shot[0] = ((unsigned int)rand()) % 10;
-			shot[1] = ((unsigned int)rand()) % 10;
-			printf("enemy_shot = (%u,%u) \n", shot[0], shot[1]);
+			EnemyHit(shot, &matrix_hits[0], hijacking_flag);
+			printf("Enemy shot:%c%u\n", rows[shot[0]], shot[1]);
 			MarkShotOnMap(&user_map, shot);
+			printf("User map:\n");
+			PrintMap(&user_map);
 
 			int course_res = ChangeHealthShip(&user_battle_ship[0], &user_cruiser[0], &user_destroyer[0], &user_torpedo_boat[0],shot);
 			if(course_res == DESTROYED)
-				--count_enemy_ships;
-			else if(!course_res)
+				--count_user_ships;
+			else if(course_res == HIJACKING)
+				hijacking_flag = 1;
+			else 
 			{
-				enemy_hit = 0;
+				hijacking_flag = 0;
+				enemy_hit = 0; 
 				user_hit = 1;
-			}	
-
-			printf("User map:\n");
-			PrintMap(&user_map);
+			}
+			
+			
 		}
 	
-
 		if(user_hit)
 		{
 			printf("Enter coordinate of hit in format A1\n");
@@ -555,14 +646,14 @@ int main()
 				return 0;
 			}
 		
-			MarkShotOnMap(&enemy_map, shot); 
+			MarkShotOnEnemyMap(&enemy_map, &enemy_visual_map, shot); 
 			printf("Enemy map:\n");
-			PrintMap(&enemy_map);
+			PrintMap(&enemy_visual_map);
 
 			//variable for check shot to hikacking to ship or destroyed to ship
 			int course_res = ChangeHealthShip(&enemy_battle_ship[0], &enemy_cruiser[0], &enemy_destroyer[0], &enemy_torpedo_boat[0],shot);
 			if(course_res == DESTROYED)
-				{
+			{
 				--count_enemy_ships;
 				printf("--------\nDestroyed!\n---------\n");
 				printf("count_enemy_ships = %d\n", count_enemy_ships);
@@ -581,8 +672,7 @@ int main()
 		printf("--------\nYou win!\n----------");
 	else if(!count_user_ships)
 		printf("--------\nYou lose\n----------");
-
-
+	
 
 	return 0;
 }
