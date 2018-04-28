@@ -11,6 +11,12 @@
 #include "game_flags_and_matrix.h"
 
 
+typedef struct
+{
+	int horisontal;
+	int right;
+	int down;
+} Orientation;
 
 
 void PrintMap(const Map * pmap)
@@ -46,6 +52,71 @@ void InitializeMatrixHits(int matrix_hits[FIELDSIZE][FIELDSIZE])
 			matrix_hits[i][j] = 0;
 }
 
+
+
+void SetEnemyOrientation(Orientation *orientation, int x, int y, int deck)
+{
+	if(rand() % 2 == 1)
+		orientation->horisontal = 1;
+	if(y + deck - 1 < FIELDSIZE)
+		orientation->right = 1;
+	if(x + deck - 1 < FIELDSIZE)
+		orientation->down = 1;	
+}
+
+
+
+void InitializeEnemyShips(BattleShip *pbattle_ship, Cruiser *pcruiser, Destroyer *pdestroyer, TorpedoBoat *ptorpedo_boat)
+{
+	srand(time(NULL));
+	int x;
+	int y;
+	int matrix_coordinate[FIELDSIZE][FIELDSIZE];
+	for(int i = 0; i < FIELDSIZE; ++i)
+		for(int j = 0; j < FIELDSIZE; ++j)
+			matrix_coordinate[i][j] = 0;
+
+	for(int i = 0; i < COUNTFOURDECK; ++i)
+	{
+		while(1)
+		{
+			x = rand() % FIELDSIZE;
+			y = rand() % FIELDSIZE;
+			if(matrix_coordinate[x][y] == 0)
+				break;
+		}
+		Orientation orientation = {0, 0, 0};
+		SetEnemyOrientation(&orientation, x, y, 4);
+
+		for(int j = 0; j < 4; ++j)
+		{
+			pbattle_ship[i].health[j] = 1;
+			if(orientation.horisontal)
+			{
+				pbattle_ship[i].coordinate[j][0] = x;
+				pbattle_ship[i].coordinate[j][1] = y;
+				matrix_coordinate[x][y] = 1;
+				if(orientation.right)
+					++y;
+				else
+					--y;
+			}
+			else
+			{
+				pbattle_ship[i].coordinate[j][0] = x;
+				pbattle_ship[i].coordinate[j][1] = y;
+				matrix_coordinate[x][y] = 1;
+				if(orientation.down)
+					++x;
+				else
+					--x;
+			}
+		}
+	}
+}
+
+
+/*
 //Random initialize enemy ships by one of tested three sets
 void InitializeEnemyShips(BattleShip *pbattle_ship, Cruiser *pcruiser, Destroyer *pdestroyer, TorpedoBoat *ptorpedo_boat)
 {
@@ -86,7 +157,7 @@ void InitializeEnemyShips(BattleShip *pbattle_ship, Cruiser *pcruiser, Destroyer
 			ptorpedo_boat[i].coordinate[j][1] = coordinate_torpedo_boat[index][i][j][1];
 		}	
 }
-
+*/
 
 
 //Mark ships coordinate by + on map
@@ -402,7 +473,12 @@ int main()
 	Cruiser enemy_cruiser[2];
 	Destroyer enemy_destroyer[3];
 	TorpedoBoat enemy_torpedo_boat[4];
-	
+
+	InitializeEnemyShips(&enemy_battle_ship[0], &enemy_cruiser[0], &enemy_destroyer[0], &enemy_torpedo_boat[0]);
+	ChangeMap(&enemy_map, &enemy_battle_ship[0], &enemy_cruiser[0], &enemy_destroyer[0], &enemy_torpedo_boat[0]);
+	PrintMap(&enemy_map);
+
+/*	
 	//Initialize by one of three random pack in file enemy_ship.h and change enemy map
 	InitializeEnemyShips(&enemy_battle_ship[0], &enemy_cruiser[0], &enemy_destroyer[0], &enemy_torpedo_boat[0]);
 	ChangeMap(&enemy_map, &enemy_battle_ship[0], &enemy_cruiser[0], &enemy_destroyer[0], &enemy_torpedo_boat[0]);
@@ -628,6 +704,6 @@ int main()
 	else if(!count_user_ships)
 		printf("--------\nYou lose\n---------");
 	
-
+*/
 	return 0;
 }
