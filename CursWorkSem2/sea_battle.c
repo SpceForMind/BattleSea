@@ -54,6 +54,7 @@ void InitializeMatrixHits(int matrix_hits[FIELDSIZE][FIELDSIZE])
 
 
 
+//Select orientation and next point of ship in map
 void SetEnemyOrientation(Orientation *orientation, int x, int y, int deck)
 {
 	if(rand() % 2 == 1)
@@ -63,7 +64,6 @@ void SetEnemyOrientation(Orientation *orientation, int x, int y, int deck)
 	if(x + deck - 1 < FIELDSIZE)
 		orientation->down = 1;	
 }
-
 
 
 void InitializeEnemyShips(BattleShip *pbattle_ship, Cruiser *pcruiser, Destroyer *pdestroyer, TorpedoBoat *ptorpedo_boat)
@@ -91,11 +91,11 @@ void InitializeEnemyShips(BattleShip *pbattle_ship, Cruiser *pcruiser, Destroyer
 		for(int j = 0; j < 4; ++j)
 		{
 			pbattle_ship[i].health[j] = 1;
+			pbattle_ship[i].coordinate[j][0] = x;
+			pbattle_ship[i].coordinate[j][1] = y;
+			matrix_coordinate[x][y] = 1;
 			if(orientation.horisontal)
 			{
-				pbattle_ship[i].coordinate[j][0] = x;
-				pbattle_ship[i].coordinate[j][1] = y;
-				matrix_coordinate[x][y] = 1;
 				if(orientation.right)
 					++y;
 				else
@@ -103,9 +103,6 @@ void InitializeEnemyShips(BattleShip *pbattle_ship, Cruiser *pcruiser, Destroyer
 			}
 			else
 			{
-				pbattle_ship[i].coordinate[j][0] = x;
-				pbattle_ship[i].coordinate[j][1] = y;
-				matrix_coordinate[x][y] = 1;
 				if(orientation.down)
 					++x;
 				else
@@ -113,56 +110,124 @@ void InitializeEnemyShips(BattleShip *pbattle_ship, Cruiser *pcruiser, Destroyer
 			}
 		}
 	}
-}
-
-
-/*
-//Random initialize enemy ships by one of tested three sets
-void InitializeEnemyShips(BattleShip *pbattle_ship, Cruiser *pcruiser, Destroyer *pdestroyer, TorpedoBoat *ptorpedo_boat)
-{
-	srand(time(NULL));
-	int index = ((unsigned int)rand()) % 3;
-
-	for(int i = 0; i < COUNTFOURDECK; i++)
+	for(int i = 0; i < COUNTTHREEDECK; ++i)
 	{
-		for(int j = 0; j < 4; ++j)
+		while(1)
 		{
-			pbattle_ship[i].health[j] = 1;
-			pbattle_ship[i].coordinate[j][0] = coordinate_battle_ships[index][j][0];
-			pbattle_ship[i].coordinate[j][1] = coordinate_battle_ships[index][j][1];
-		}	
-	}	
-	
-	for(int i = 0; i < COUNTTHREEDECK; i++)
+			x = rand() % FIELDSIZE;
+			y = rand() % FIELDSIZE;
+			if(matrix_coordinate[x][y] == 0)
+				break;
+		}
+		Orientation orientation = {0, 0, 0};
+		SetEnemyOrientation(&orientation, x, y, 4);
+
 		for(int j = 0; j < 3; ++j)
 		{
 			pcruiser[i].health[j] = 1;
-			pcruiser[i].coordinate[j][0] = coordinate_cruiser[index][i][j][0];
-			pcruiser[i].coordinate[j][1] = coordinate_cruiser[index][i][j][1];
+			pcruiser[i].coordinate[j][0] = x;
+			pcruiser[i].coordinate[j][1] = y;
+			matrix_coordinate[x][y] = 1;
+			if(orientation.horisontal)
+			{
+				if(orientation.right)
+					++y;
+				else
+					--y;
+			}
+			else
+			{
+				if(orientation.down)
+					++x;
+				else
+					--x;
+			}
 		}
+	}
+	for(int i = 0; i < COUNTTWODECK; ++i)
+	{
+		while(1)
+		{
+			x = rand() % FIELDSIZE;
+			y = rand() % FIELDSIZE;
+			if(matrix_coordinate[x][y] == 0)
+				break;
+		}
+		Orientation orientation = {0, 0, 0};
+		SetEnemyOrientation(&orientation, x, y, 2);
 
-	for(int i = 0; i < COUNTTWODECK; i++)
 		for(int j = 0; j < 2; ++j)
 		{
 			pdestroyer[i].health[j] = 1;
-			pdestroyer[i].coordinate[j][0] = coordinate_destroyer[index][i][j][0];
-			pdestroyer[i].coordinate[j][1] = coordinate_destroyer[index][i][j][1];
+			pdestroyer[i].coordinate[j][0] = x;
+			pdestroyer[i].coordinate[j][1] = y;
+			matrix_coordinate[x][y] = 1;
+			if(orientation.horisontal)
+			{
+				if(orientation.right)
+					++y;
+				else
+					--y;
+			}
+			else
+			{
+				if(orientation.down)
+					++x;
+				else
+					--x;
+			}
 		}
+	}	
+	for(int i = 0; i < COUNTONEDECK; ++i)
+	{
+		while(1)
+		{
+			x = rand() % FIELDSIZE;
+			y = rand() % FIELDSIZE;
+			if(matrix_coordinate[x][y] == 0)
+				break;
+		}
+		Orientation orientation = {0, 0, 0};
+		SetEnemyOrientation(&orientation, x, y, 1);
 
-	for(int i = 0; i < COUNTONEDECK; i++)
 		for(int j = 0; j < 1; ++j)
 		{
 			ptorpedo_boat[i].health[j] = 1;
-			ptorpedo_boat[i].coordinate[j][0] = coordinate_torpedo_boat[index][i][j][0];
-			ptorpedo_boat[i].coordinate[j][1] = coordinate_torpedo_boat[index][i][j][1];
-		}	
+			ptorpedo_boat[i].coordinate[j][0] = x;
+			ptorpedo_boat[i].coordinate[j][1] = y;
+			matrix_coordinate[x][y] = 1;
+			if(orientation.horisontal)
+			{
+				if(orientation.right)
+					++y;
+				else
+					--y;
+			}
+			else
+			{
+				if(orientation.down)
+					++x;
+				else
+					--x;
+			}
+		}
+	}	
 }
-*/
 
+
+
+
+void CleanMap(Map *pmap)
+{
+	for(int i = 0; i < FIELDSIZE; ++i)
+		for(int j = 0; j < FIELDSIZE; ++j)
+			pmap->matrix_battle[i][j] = '0';
+}
 
 //Mark ships coordinate by + on map
 void ChangeMap(Map *pmap, BattleShip *pbattle_ship, Cruiser *pcruiser, Destroyer *pdestroyer, TorpedoBoat *ptorpedo_boat)
 {
+	CleanMap(pmap);
 	for(int i = 0; i < COUNTFOURDECK; ++i)
 		for(int j = 0; j < 4; ++j)
 		{
@@ -194,25 +259,90 @@ void ChangeMap(Map *pmap, BattleShip *pbattle_ship, Cruiser *pcruiser, Destroyer
 			int y = ptorpedo_boat[i].coordinate[j][1];
 			pmap->matrix_battle[x][y] = '+';
 		}
-
-
 }
 
+
+
+int VoidSpaceAroundShips(BattleShip *pbattle_ship, Cruiser *pcruiser, Destroyer *pdestroyer, TorpedoBoat *ptorpedo_boat) 
+{	
+	for(int i = 0; i < 4; ++i)
+	{
+		int x = pbattle_ship[0].coordinate[i][0];
+		int y = pbattle_ship[0].coordinate[i][1];
+
+		for(int j = 0; j < 2; ++j)
+			for(int k = 0; k < 3; ++k)
+				if(abs(x - pcruiser[j].coordinate[k][0]) < 2 && abs(y - pcruiser[j].coordinate[k][1]) < 2)
+					return 0;
+		for(int j = 0; j < 3; ++j)
+			for(int k = 0; k < 2; ++k)
+				if(abs(x - pdestroyer[j].coordinate[k][0]) < 2 && abs(y - pdestroyer[j].coordinate[k][1]) < 2)
+					return 0;
+		for(int j = 0; j < 4; ++j)
+			for(int k = 0; k < 1; ++k)
+				if(abs(x - ptorpedo_boat[j].coordinate[k][0]) < 2 && abs(y - ptorpedo_boat[j].coordinate[k][1]) < 2)
+					return 0;
+	}
+	for(int i_s = 0; i_s < COUNTTHREEDECK; ++i_s)
+	{
+		for(int i = 0; i < 3; ++i)
+		{
+			int x = pcruiser[i_s].coordinate[i][0];
+			int y = pcruiser[i_s].coordinate[i][1];
+			
+			//Check first three deck ship with second three deck ship
+			for(int j = 1; j < 2 && i_s!= 1; ++j)
+				for(int k = 0; k < 3; ++k)
+					if(abs(x - pcruiser[j].coordinate[k][0]) < 2 && abs(y - pcruiser[j].coordinate[k][1]) < 2)
+						return 0;
+						
+			for(int j = 0; j < 3; ++j)
+				for(int k = 0; k < 2; ++k)
+					if(abs(x - pdestroyer[j].coordinate[k][0]) < 2 && abs(y-pdestroyer[j].coordinate[k][1]) < 2)
+						return 0;
+			for(int j = 0; j < 4; ++j)
+				for(int k = 0; k < 1; ++k)
+					if(abs(x - ptorpedo_boat[j].coordinate[k][0]) < 2 && abs(y - ptorpedo_boat[j].coordinate[k][1]) < 2)
+						return 0;
+		}
+	}
+	for(int i_s = 0; i_s < COUNTTWODECK; ++i_s)
+	{
+		for(int i = 0; i < COUNTTWODECK; ++i)
+		{
+			int x = pdestroyer[i_s].coordinate[i][0];
+			int y = pdestroyer[i_s].coordinate[i][1];
+		
+			for(int j = 1; j < 3 && i_s!= j; ++j)
+				for(int k = 0; k < 2; ++k)
+					if(abs(x - pdestroyer[j].coordinate[k][0]) < 2 && abs(y-pdestroyer[j].coordinate[k][1]) < 2)
+						return 0;
+			for(int j = 0; j < 4; ++j)
+				for(int k = 0; k < 1; ++k)
+					if(abs(x - ptorpedo_boat[j].coordinate[k][0]) < 2 && abs(y - ptorpedo_boat[j].coordinate[k][1]) < 2)
+						return 0;
+		}
+	}
+
+	
+	return 1;
+}
 
 
 //Check coordinates of ship for diagonal and horisontal correct
 int CorrectCoordinates(int coordinate[2][2], int deck)
 {	
+	int horisontal_flag;
 	int vertical_flag = 0;
-	int horisontal_flag = 0;
-
 	if(coordinate[0][0] == coordinate[1][0])
 		horisontal_flag = 1;
-	else if(coordinate[0][1] == coordinate[1][1])
+	if(coordinate[0][0] == coordinate[1][0])
 		vertical_flag = 1;
+
 	if(horisontal_flag && vertical_flag)
 		return 0;
 	
+	//Check coordinates to vertical/diagonal coorect
 	if(vertical_flag)
 		for(int i = 0; i < deck - 1; ++i)
 		{
@@ -227,6 +357,7 @@ int CorrectCoordinates(int coordinate[2][2], int deck)
 			if(coordinate[i][0]!= coordinate[i + 1][0] || (dy!= 1 && dy!= -1))
 				return 0;
 		}
+
 	
 	return 1;
 }
@@ -260,7 +391,9 @@ int CorrectInsert(Map *pmap)
 				++count_cell;
 		
 	if(count_cell == COUNTCELLOFSHIPS)
+	{
 		return 1;
+	}
 	else
 		return 0;
 }
@@ -476,14 +609,15 @@ int main()
 
 	InitializeEnemyShips(&enemy_battle_ship[0], &enemy_cruiser[0], &enemy_destroyer[0], &enemy_torpedo_boat[0]);
 	ChangeMap(&enemy_map, &enemy_battle_ship[0], &enemy_cruiser[0], &enemy_destroyer[0], &enemy_torpedo_boat[0]);
+	//because function of random dot't check ships for insert(only horisonatal and vertical corrects)
+	while(!CorrectInsert(&enemy_map))
+	{
+		InitializeEnemyShips(&enemy_battle_ship[0], &enemy_cruiser[0], &enemy_destroyer[0], &enemy_torpedo_boat[0]);
+		ChangeMap(&enemy_map, &enemy_battle_ship[0], &enemy_cruiser[0], &enemy_destroyer[0], &enemy_torpedo_boat[0]);
+	}
 	PrintMap(&enemy_map);
 
 /*	
-	//Initialize by one of three random pack in file enemy_ship.h and change enemy map
-	InitializeEnemyShips(&enemy_battle_ship[0], &enemy_cruiser[0], &enemy_destroyer[0], &enemy_torpedo_boat[0]);
-	ChangeMap(&enemy_map, &enemy_battle_ship[0], &enemy_cruiser[0], &enemy_destroyer[0], &enemy_torpedo_boat[0]);
-	
-
 	printf("Each coorinates line enter with new line\n");
 	printf("Please enter four coordinates for one battle ship to formate A1A2A3A4:\n");
 		
@@ -703,7 +837,7 @@ int main()
 		printf("--------\nYou win!\n---------");
 	else if(!count_user_ships)
 		printf("--------\nYou lose\n---------");
-	
-*/
+
+*/	
 	return 0;
 }
