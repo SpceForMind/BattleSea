@@ -8,7 +8,9 @@
 #include "coordinate_enemy_ships.h"
 #include "struct_ships.h"
 #include "settings_ships.h"
-#include "game_flags_and_matrix.h"
+#include "game_matrix.h"
+#include "ships_flags.h"
+#include "find_scale_of_ship.h" 
 
 
 typedef struct
@@ -45,6 +47,7 @@ void InitializeMap(Map *pmap)
 			pmap->matrix_battle[i][j] = '0';
 }
 
+
 void InitializeMatrixHits(int matrix_hits[FIELDSIZE][FIELDSIZE])
 {
 	for(int i = 0; i < FIELDSIZE; ++i)
@@ -53,6 +56,41 @@ void InitializeMatrixHits(int matrix_hits[FIELDSIZE][FIELDSIZE])
 }
 
 
+void CopyMap(Map *pmap, char **matrix_field)
+{
+	for(int i = 0; i < FIELDSIZE; ++i)
+		for(int j = 0; j < FIELDSIZE; ++j)
+			matrix_field[i][j] = pmap->matrix_battle[i][j];
+}
+
+
+
+
+void MarkSpaceAroundCoordinate(int matrix_coordinate[FIELDSIZE][FIELDSIZE], int x, int y)
+{
+	//Mark upper coordintes
+	if(x - 1 >= 0)
+	{
+		matrix_coordinate[x - 1][y] = 1;
+		if(y - 1 >= 0)
+			matrix_coordinate[x - 1][y - 1] = 1;
+		if(y + 1 < FIELDSIZE)
+			matrix_coordinate[x - 1][y + 1] = 1;
+	}
+	//Mark lower coordinates
+	if(x + 1 < FIELDSIZE)
+	{
+		matrix_coordinate[x + 1][y] = 1;
+		if(y - 1 >= 0)
+			matrix_coordinate[x + 1][y - 1] = 1;
+		if(y + 1 < FIELDSIZE)
+			matrix_coordinate[x + 1][y + 1] = 1;
+	}
+	if(y - 1 >= 0)
+		matrix_coordinate[x][y - 1] = 1; //Mark left coordinate
+	if(y + 1 < FIELDSIZE)
+		matrix_coordinate[x][y + 1] = 1; //Mark right coordinate
+}
 
 //Select orientation and next point of ship in map
 void SetEnemyOrientation(Orientation *orientation, int x, int y, int deck)
@@ -66,9 +104,10 @@ void SetEnemyOrientation(Orientation *orientation, int x, int y, int deck)
 }
 
 
-void InitializeEnemyShips(BattleShip *pbattle_ship, Cruiser *pcruiser, Destroyer *pdestroyer, TorpedoBoat *ptorpedo_boat)
+void InitializeEnemyShips(BattleShip *pbattle_ship, Cruiser *pcruiser, Destroyer *pdestroyer, TorpedoBoat *ptorpedo_boat,  													     int first_call)
 {
-	srand(time(NULL));
+	if(first_call)
+		srand(time(NULL));
 	int x;
 	int y;
 	int matrix_coordinate[FIELDSIZE][FIELDSIZE];
@@ -94,6 +133,7 @@ void InitializeEnemyShips(BattleShip *pbattle_ship, Cruiser *pcruiser, Destroyer
 			pbattle_ship[i].coordinate[j][0] = x;
 			pbattle_ship[i].coordinate[j][1] = y;
 			matrix_coordinate[x][y] = 1;
+			MarkSpaceAroundCoordinate(matrix_coordinate, x, y); 
 			if(orientation.horisontal)
 			{
 				if(orientation.right)
@@ -128,6 +168,7 @@ void InitializeEnemyShips(BattleShip *pbattle_ship, Cruiser *pcruiser, Destroyer
 			pcruiser[i].coordinate[j][0] = x;
 			pcruiser[i].coordinate[j][1] = y;
 			matrix_coordinate[x][y] = 1;
+			MarkSpaceAroundCoordinate(matrix_coordinate, x, y);
 			if(orientation.horisontal)
 			{
 				if(orientation.right)
@@ -162,6 +203,7 @@ void InitializeEnemyShips(BattleShip *pbattle_ship, Cruiser *pcruiser, Destroyer
 			pdestroyer[i].coordinate[j][0] = x;
 			pdestroyer[i].coordinate[j][1] = y;
 			matrix_coordinate[x][y] = 1;
+			MarkSpaceAroundCoordinate(matrix_coordinate, x, y);
 			if(orientation.horisontal)
 			{
 				if(orientation.right)
@@ -196,6 +238,7 @@ void InitializeEnemyShips(BattleShip *pbattle_ship, Cruiser *pcruiser, Destroyer
 			ptorpedo_boat[i].coordinate[j][0] = x;
 			ptorpedo_boat[i].coordinate[j][1] = y;
 			matrix_coordinate[x][y] = 1;
+			MarkSpaceAroundCoordinate(matrix_coordinate, x, y);
 			if(orientation.horisontal)
 			{
 				if(orientation.right)
@@ -262,7 +305,7 @@ void ChangeMap(Map *pmap, BattleShip *pbattle_ship, Cruiser *pcruiser, Destroyer
 }
 
 
-
+/*
 int VoidSpaceAroundShips(BattleShip *pbattle_ship, Cruiser *pcruiser, Destroyer *pdestroyer, TorpedoBoat *ptorpedo_boat) 
 {	
 	for(int i = 0; i < 4; ++i)
@@ -327,6 +370,8 @@ int VoidSpaceAroundShips(BattleShip *pbattle_ship, Cruiser *pcruiser, Destroyer 
 	
 	return 1;
 }
+*/
+
 
 
 //Check coordinates of ship for diagonal and horisontal correct
@@ -394,6 +439,49 @@ int CorrectInsert(Map *pmap)
 	{
 		return 1;
 	}
+	else
+		return 0;
+}
+
+//Check for void space around ship with using function which find scale of ships from library find_scale_of_ship.h
+int ControlCheckShips(char **matrix_field)
+{
+	int coins_one = 0;
+	int coins_two = 0;
+	int coins_three = 0;
+	int coins_four = 0;
+	int cur_scale = 1;
+
+	//10 is count of ships
+	for(int i = 0; i < 10; ++i)
+	{
+		if(!CompleteTraversal(matrix_field))
+		{
+			int start_point[2];
+			GetStartPoint(matrix_field, start_point);
+			matrix_field[start_point[0]][start_point[1]] = MARK;
+			FindCurScale(matrix_field, start_point, &cur_scale);
+			switch(cur_scale)
+			{
+				case 1:
+					++coins_one;
+					break;
+				case 2:
+					++coins_two;
+					break;
+				case 3:
+					++coins_three;
+					break;
+				case 4:
+					++coins_four;
+					break;
+			}
+			cur_scale = 1;
+		}	
+	}
+
+	if(coins_one == COUNTONEDECK && coins_two == COUNTTWODECK && coins_three == COUNTTHREEDECK && coins_four == COUNTFOURDECK)
+		return 1;
 	else
 		return 0;
 }
@@ -607,13 +695,23 @@ int main()
 	Destroyer enemy_destroyer[3];
 	TorpedoBoat enemy_torpedo_boat[4];
 
-	InitializeEnemyShips(&enemy_battle_ship[0], &enemy_cruiser[0], &enemy_destroyer[0], &enemy_torpedo_boat[0]);
+	InitializeEnemyShips(&enemy_battle_ship[0], &enemy_cruiser[0], &enemy_destroyer[0], &enemy_torpedo_boat[0], 1);
 	ChangeMap(&enemy_map, &enemy_battle_ship[0], &enemy_cruiser[0], &enemy_destroyer[0], &enemy_torpedo_boat[0]);
+	char **matrix_field = (char **)malloc(sizeof(char *) * FIELDSIZE);
+	for(int i = 0; i < FIELDSIZE; ++i)
+		matrix_field[i] = (char *)malloc(sizeof(char) * FIELDSIZE);
+	CopyMap(&enemy_map, matrix_field);
 	//because function of random dot't check ships for insert(only horisonatal and vertical corrects)
-	while(!CorrectInsert(&enemy_map))
+	while(1)
 	{
-		InitializeEnemyShips(&enemy_battle_ship[0], &enemy_cruiser[0], &enemy_destroyer[0], &enemy_torpedo_boat[0]);
+		if(!CorrectInsert(&enemy_map) || !ControlCheckShips(matrix_field))
+		{	
+		InitializeEnemyShips(&enemy_battle_ship[0], &enemy_cruiser[0], &enemy_destroyer[0], &enemy_torpedo_boat[0], 0);
 		ChangeMap(&enemy_map, &enemy_battle_ship[0], &enemy_cruiser[0], &enemy_destroyer[0], &enemy_torpedo_boat[0]);
+		CopyMap(&enemy_map, matrix_field); 
+		}
+		else
+			break;
 	}
 	PrintMap(&enemy_map);
 
