@@ -32,6 +32,7 @@ void FindCurScale(char **matrix_field, int cur_point[2], int *cur_scale)
 	int x = cur_point[0];
 	int y = cur_point[1];
 
+	//Check right/left and up/down points
 	if(x + 1 < FIELDSIZE  && matrix_field[x + 1][y] == FIGURE)
 	{
 		++*cur_scale;
@@ -64,6 +65,39 @@ void FindCurScale(char **matrix_field, int cur_point[2], int *cur_scale)
 		cur_point[1] = y - 1;
 		FindCurScale(matrix_field, cur_point, cur_scale);
 	}
+	//Check horisontal points 
+	if(x - 1 >= 0 && y + 1 < FIELDSIZE && matrix_field[x - 1][y + 1] == FIGURE)
+	{
+		++*cur_scale;
+		matrix_field[x - 1][y + 1] = MARK;
+		cur_point[0] = x - 1;
+		cur_point[1] = y + 1;
+		FindCurScale(matrix_field, cur_point, cur_scale);
+	}
+	if(x - 1 >= 0 && y - 1 >= 0 && matrix_field[x - 1][y - 1] == FIGURE)
+	{
+		++*cur_scale;
+		matrix_field[x - 1][y - 1] = MARK;
+		cur_point[0] = x - 1;
+		cur_point[1] = y - 1;
+		FindCurScale(matrix_field, cur_point, cur_scale);
+	}
+	if(x + 1 < FIELDSIZE && y + 1 < FIELDSIZE && matrix_field[x + 1][y + 1] == FIGURE)
+	{
+		++*cur_scale;
+		matrix_field[x + 1][y + 1] = MARK;
+		cur_point[0] = x + 1;
+		cur_point[1] = y + 1;
+		FindCurScale(matrix_field, cur_point, cur_scale);
+	}
+	if(x + 1 < FIELDSIZE && y - 1 >= 0 && matrix_field[x + 1][y - 1] == FIGURE)
+	{
+		++*cur_scale;
+		matrix_field[x + 1][y - 1] = MARK;
+		cur_point[0] = x + 1;
+		cur_point[1] = y - 1;
+		FindCurScale(matrix_field, cur_point, cur_scale);
+	}	
 }
 
 
