@@ -32,3 +32,12 @@ typedef struct torpedo_boat
 } TorpedoBoat;
 
 
+//struct for set orientation of enemy ships
+typedef struct
+{
+	int horisontal;
+	int right;
+	int down;
+} Orientation;
+
+

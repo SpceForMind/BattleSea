@@ -13,12 +13,6 @@
 #include "find_scale_of_ship.h" 
 
 
-typedef struct
-{
-	int horisontal;
-	int right;
-	int down;
-} Orientation;
 
 
 void PrintMap(const Map * pmap)
@@ -48,11 +42,11 @@ void InitializeMap(Map *pmap)
 }
 
 
-void InitializeMatrixHits(int matrix_hits[FIELDSIZE][FIELDSIZE])
+void InitializeMatrixHits(char matrix_hits[FIELDSIZE][FIELDSIZE])
 {
 	for(int i = 0; i < FIELDSIZE; ++i)
 		for(int j = 0; j < FIELDSIZE; ++j)
-			matrix_hits[i][j] = 0;
+			matrix_hits[i][j] = '0';
 }
 
 
@@ -515,23 +509,75 @@ void MarkSpaceAroundDestroyedShip(BattleShip *pbattle_ship, Cruiser *pcruiser, D
 {
 	if(DestroyedShip(pbattle_ship[0].health, 4))	
 		for(int i = 0; i < 4; ++i)
-			MarkSpaceAroundCoordinate(pmap->matrix_battle, pbattle_ship[0].coordinate[i][0], pbattle_ship[0].coordinate[i][1]);
+		{
+			int x = pbattle_ship[0].coordinate[i][0];
+			int y = pbattle_ship[0].coordinate[i][1];
+			MarkSpaceAroundCoordinate(pmap->matrix_battle, x, y);
+		}
 	
 	for(int i = 0; i < COUNTTWODECK; ++i)
 		if(DestroyedShip(pcruiser[i].health, 3))
 		       for(int j = 0; j < 3; ++j)
-			       MarkSpaceAroundCoordinate(pmap->matrix_battle, pcruiser[i].coordinate[j][0], pcruiser[i].coordinate[j][1]);
+		       {
+			       int x = pcruiser[i].coordinate[j][0];
+			       int y = pcruiser[i].coordinate[j][1];
+			       MarkSpaceAroundCoordinate(pmap->matrix_battle, x, y);
+		       }
 	for(int i = 0; i < COUNTTHREEDECK; ++i)
 		if(DestroyedShip(pdestroyer[i].health, 2))
 		       for(int j = 0; j < 2; ++j)
-			       MarkSpaceAroundCoordinate(pmap->matrix_battle, pdestroyer[i].coordinate[j][0], pdestroyer[i].coordinate[j][1]);
+		       {
+			       int x = pdestroyer[i].coordinate[j][0];
+			       int y = pdestroyer[i].coordinate[j][1];
+			       MarkSpaceAroundCoordinate(pmap->matrix_battle, x, y);
+			}
 	for(int i = 0; i < COUNTONEDECK; ++i)
 		if(DestroyedShip(ptorpedo_boat[i].health, 1))
 		       for(int j = 0; j < 1; ++j)
-			       MarkSpaceAroundCoordinate(pmap->matrix_battle, ptorpedo_boat[i].coordinate[j][0], ptorpedo_boat[i].coordinate[j][1]);
-			    	       
-
+		       {
+			       int x = ptorpedo_boat[i].coordinate[j][0];
+			       int y = ptorpedo_boat[i].coordinate[j][1];
+			       MarkSpaceAroundCoordinate(pmap->matrix_battle, x, y);
+ 			}
 }
+
+
+//mark for exclude points in next hits of enemy
+void MarkSpaceAroundCoordinateInMatrixHits(BattleShip *pbattle_ship, Cruiser *pcruiser, Destroyer *pdestroyer, TorpedoBoat *ptorpedo_boat, char matrix_hits[FIELDSIZE][FIELDSIZE])
+{
+	if(DestroyedShip(pbattle_ship[0].health, 4))	
+		for(int i = 0; i < 4; ++i)
+		{
+			int x = pbattle_ship[0].coordinate[i][0];
+			int y = pbattle_ship[0].coordinate[i][1];
+			MarkSpaceAroundCoordinate(matrix_hits, x, y);
+		}
+	for(int i = 0; i < COUNTTWODECK; ++i)
+		if(DestroyedShip(pcruiser[i].health, 3))
+		       for(int j = 0; j < 3; ++j)
+		       {
+			       int x = pcruiser[i].coordinate[j][0];
+			       int y = pcruiser[i].coordinate[j][1];
+			       MarkSpaceAroundCoordinate(matrix_hits, x, y);
+		       }
+	for(int i = 0; i < COUNTTHREEDECK; ++i)
+		if(DestroyedShip(pdestroyer[i].health, 2))
+		       for(int j = 0; j < 2; ++j)
+		       {
+			       int x = pdestroyer[i].coordinate[j][0];
+			       int y = pdestroyer[i].coordinate[j][1];
+			       MarkSpaceAroundCoordinate(matrix_hits, x, y);
+			}
+	for(int i = 0; i < COUNTONEDECK; ++i)
+		if(DestroyedShip(ptorpedo_boat[i].health, 1))
+		       for(int j = 0; j < 1; ++j)
+		       {
+			       int x = ptorpedo_boat[i].coordinate[j][0];
+			       int y = ptorpedo_boat[i].coordinate[j][1];
+			       MarkSpaceAroundCoordinate(matrix_hits, x, y);
+		       }
+}
+
 
 
 //Trancfer char to index for matrix of battle
@@ -549,10 +595,7 @@ int CharToIndex(char c)
 int OutOfRange(int x, int y)
 {
 	if(x < 0 || x > 9 || y < 0 | y > 9)
-	{
-		printf("Coordinate out of range!\n");
 		return 1;
-	}
 	else
 		return 0;
 }
@@ -573,7 +616,7 @@ int RandomOffset()
 }
 
 
-void EnemyHit(int shot[2], int matrix_hits[FIELDSIZE][FIELDSIZE], int hijacking_flag)
+void EnemyHit(int shot[2], char matrix_hits[FIELDSIZE][FIELDSIZE], int hijacking_flag)
 {
 	int x = shot[0];
 	int y = shot[1];
@@ -586,9 +629,9 @@ void EnemyHit(int shot[2], int matrix_hits[FIELDSIZE][FIELDSIZE], int hijacking_
 			x = ((unsigned int)rand()) % 10;
 			y = ((unsigned int)rand()) % 10;
 
-			if(matrix_hits[x][y] == 0)
+			if(matrix_hits[x][y] == '0')
 			{
-				matrix_hits[x][y] = 1;
+				matrix_hits[x][y] = 'x';
 				new_hit_flag = 1;
 			}
 		}
@@ -604,9 +647,9 @@ void EnemyHit(int shot[2], int matrix_hits[FIELDSIZE][FIELDSIZE], int hijacking_
 			time_x = x + RandomOffset();
 			time_y = y + RandomOffset();
 			
-			if(!OutOfRange(time_x, time_y) && matrix_hits[time_x][time_y] == 0 &&(abs(x-time_x)!= abs(y-time_y)))
+			if(!OutOfRange(time_x, time_y) && matrix_hits[time_x][time_y] == '0' &&(abs(x-time_x)!= abs(y-time_y)))
 			{
-				matrix_hits[time_x][time_y] = 1;
+				matrix_hits[time_x][time_y] = 'x';
 				new_hit_flag = 1;
 				x = time_x;
 				y = time_y;
@@ -618,6 +661,7 @@ void EnemyHit(int shot[2], int matrix_hits[FIELDSIZE][FIELDSIZE], int hijacking_
 		{
 			x = ((unsigned int)rand()) % 10;
 			y = ((unsigned int)rand()) % 10;
+			matrix_hits[x][y] = 'x';
 		}
 	}
 
@@ -688,7 +732,10 @@ int main()
 				return 0;
 			}
 			if(OutOfRange(CharToIndex(toupper(col)), row))
+			{
+				printf("Coordinate out of range!\n");
 				return 0;
+			}
 			else
 			{
 				//printf("[%c, %d]\n", col, row);
@@ -716,7 +763,10 @@ int main()
 				return 0;
 			}
 			if(OutOfRange(CharToIndex(toupper(col)), row))
+			{
+				printf("Coordiante out of range!\n");
 				return 0;
+			}
 			else
 			{
 				//printf("[%c, %d]\n", col, row);
@@ -744,7 +794,10 @@ int main()
 				return 0;
 			}
 			if(OutOfRange(CharToIndex(toupper(col)), row))
+			{
+				printf("Coordinate out of range!\n");
 				return 0;
+			}
 			else
 			{
 				//printf("[%c, %d]\n", col, row);
@@ -772,7 +825,10 @@ int main()
 				return 0;
 			}
 			if(OutOfRange(CharToIndex(toupper(col)), row))
+			{
+				printf("Coordinate out of range!\n");
 				return 0;
+			}
 			else
 			{
 				//printf("[%c, %d]\n", col, row);
@@ -811,10 +867,10 @@ int main()
 	int count_enemy_ships = 10;
 	int user_hit = 1; 
 	int enemy_hit = 0; 
-	int matrix_hits[FIELDSIZE][FIELDSIZE]; //matrix for coordinates, which computer already select
+	char matrix_hits[FIELDSIZE][FIELDSIZE]; //matrix for coordinates, which computer already select
 	int hijacking_flag = 0; //flag for next enemy hit(random point or around with some point)
 
-	InitializeMatrixHits(&matrix_hits[0]);
+	InitializeMatrixHits(matrix_hits);
 	srand(time(NULL));
 
 	while(count_user_ships && count_enemy_ships)
@@ -834,12 +890,17 @@ int main()
 			int course_res = ChangeHealthShip(&user_battle_ship[0], &user_cruiser[0], &user_destroyer[0], &user_torpedo_boat[0],shot);
 			if(course_res == DESTROYED)
 			{
+				printf("Enemy destroyed your ship!\n");
 				--count_user_ships;
 				MarkSpaceAroundDestroyedShip(&user_battle_ship[0], &user_cruiser[0], &user_destroyer[0], &user_torpedo_boat[0], &user_map);
+				MarkSpaceAroundCoordinateInMatrixHits(&user_battle_ship[0], &user_cruiser[0], &user_destroyer[0], &user_torpedo_boat[0], matrix_hits);
 			}
 
 			else if(course_res == HIJACKING)
+			{
+				printf("Enemy hijacking in your ship!\n");
 				hijacking_flag = 1;
+			}
 			else 
 			{
 				hijacking_flag = 0;
@@ -849,7 +910,6 @@ int main()
 			
 			
 		}
-	
 		if(user_hit)
 		{
 			printf("Enter coordinate of hit in format A1\n");
