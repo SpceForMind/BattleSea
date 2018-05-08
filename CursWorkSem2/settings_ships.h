@@ -1,6 +1,6 @@
 #pragma once
 #define FIELDSIZE 10
-#define COUNTSHIP 4
+//#define COUNTSHIP 4
 
 #define COUNTFOURDECK 1
 #define COUNTTHREEDECK 2

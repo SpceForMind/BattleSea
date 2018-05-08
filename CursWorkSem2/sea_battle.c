@@ -5,7 +5,6 @@
 #include <ctype.h>
 #include <time.h>
 
-#include "coordinate_enemy_ships.h"
 #include "struct_ships.h"
 #include "settings_ships.h"
 #include "game_matrix.h"
@@ -100,6 +99,7 @@ void SetEnemyOrientation(Orientation *orientation, int x, int y, int deck)
 
 void InitializeEnemyShips(BattleShip *pbattle_ship, Cruiser *pcruiser, Destroyer *pdestroyer, TorpedoBoat *ptorpedo_boat,  													     int first_call)
 {
+	//for different value which will return rand()
 	if(first_call)
 		srand(time(NULL));
 	int x;
@@ -264,7 +264,7 @@ void CleanMap(Map *pmap)
 //Mark ships coordinate by + on map
 void ChangeMap(Map *pmap, BattleShip *pbattle_ship, Cruiser *pcruiser, Destroyer *pdestroyer, TorpedoBoat *ptorpedo_boat)
 {
-	CleanMap(pmap);
+	CleanMap(pmap); //because this function is called until coordinate of enemy ships incorrects 
 	for(int i = 0; i < COUNTFOURDECK; ++i)
 		for(int j = 0; j < 4; ++j)
 		{
@@ -405,7 +405,7 @@ int ControlCheckShips(char **matrix_field)
 			cur_scale = 1;
 		}	
 	}
-
+	
 	if(coins_one == COUNTONEDECK && coins_two == COUNTTWODECK && coins_three == COUNTTHREEDECK && coins_four == COUNTFOURDECK)
 		return 1;
 	else
@@ -427,7 +427,7 @@ int DestroyedShip(int health[1], int deck)
 		return 0;
 }
 
-
+//Change health if shot and point of ship is equal
 int ChangeHealthShip(BattleShip *pbattle_ship, Cruiser *pcruiser, Destroyer *pdestroyer, TorpedoBoat *ptorpedo_boat, 
 		     int shot[2])
 {
@@ -602,7 +602,7 @@ int OutOfRange(int x, int y)
 
 
 
-// Choise new hit for computer
+//Random offset for new hit for computer
 int RandomOffset()
 {
 	int r_num = (unsigned int)rand() % 10;
@@ -714,6 +714,7 @@ int main()
 	PrintMap(&enemy_map);
 
 	
+	//Alignment ships by the user
 	printf("Each coorinates line enter with new line\n");
 	printf("Please enter four coordinates for one battle ship to formate A1A2A3A4:\n");
 		
