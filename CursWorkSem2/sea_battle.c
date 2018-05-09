@@ -428,15 +428,14 @@ int DestroyedShip(int health[1], int deck)
 }
 
 //Change health if shot and point of ship is equal
-int ChangeHealthShip(BattleShip *pbattle_ship, Cruiser *pcruiser, Destroyer *pdestroyer, TorpedoBoat *ptorpedo_boat, 
-		     int shot[2])
+int ChangeHealthShip(BattleShip *pbattle_ship, Cruiser *pcruiser, Destroyer *pdestroyer, TorpedoBoat *ptorpedo_boat, Map *pmap, int shot[2])
 {
 	int x = shot[0];
 	int y = shot[1];
 
 	for(int i = 0; i < COUNTFOURDECK; ++i)
 		for(int j = 0; j < 4; ++j)
-			if(pbattle_ship[i].coordinate[j][0] == x && pbattle_ship[i].coordinate[j][1] == y)
+			if(pbattle_ship[i].coordinate[j][0] == x && pbattle_ship[i].coordinate[j][1] == y && pmap->matrix_battle[x][y] == '+')
 			{
 				pbattle_ship[i].health[j] = 0;
 				if(DestroyedShip(pbattle_ship[i].health, 4))
@@ -447,7 +446,7 @@ int ChangeHealthShip(BattleShip *pbattle_ship, Cruiser *pcruiser, Destroyer *pde
 
 	for(int i = 0; i < COUNTTHREEDECK; ++i)
 		for(int j = 0; j < 3; ++j)
-			if(pcruiser[i].coordinate[j][0] == x && pcruiser[i].coordinate[j][1] == y)
+			if(pcruiser[i].coordinate[j][0] == x && pcruiser[i].coordinate[j][1] == y && pmap->matrix_battle[x][y] == '+')
 			{
 				pcruiser[i].health[j] = 0;
 				if(DestroyedShip(pcruiser[i].health, 3))
@@ -458,7 +457,7 @@ int ChangeHealthShip(BattleShip *pbattle_ship, Cruiser *pcruiser, Destroyer *pde
 
 	for(int i = 0; i < COUNTTWODECK; ++i)
 		for(int j = 0; j < 2; ++j)
-			if(pdestroyer[i].coordinate[j][0] == x && pdestroyer[i].coordinate[j][1] == y)
+			if(pdestroyer[i].coordinate[j][0] == x && pdestroyer[i].coordinate[j][1] == y && pmap->matrix_battle[x][y] == '+') 
 			{
 				pdestroyer[i].health[j] = 0;
 				if(DestroyedShip(pdestroyer[i].health, 2))
@@ -469,7 +468,7 @@ int ChangeHealthShip(BattleShip *pbattle_ship, Cruiser *pcruiser, Destroyer *pde
 
 	for(int i = 0; i < COUNTONEDECK; ++i)
 		for(int j = 0; j < 1; ++j)
-			if(ptorpedo_boat[i].coordinate[j][0] == x && ptorpedo_boat[i].coordinate[j][1] == y)
+			if(ptorpedo_boat[i].coordinate[j][0] == x && ptorpedo_boat[i].coordinate[j][1] == y && pmap->matrix_battle[x][y] == '+')
 			{
 				ptorpedo_boat[i].health[j] = 0;
 				if(DestroyedShip(ptorpedo_boat[i].health, 1))
@@ -499,9 +498,15 @@ void MarkShotOnEnemyMap(Map *pmap, Map *pvisual_map, int shot[2])
 	int y = shot[1];
 	
 	if(pmap->matrix_battle[x][y] == '+')
+	{
 		pvisual_map->matrix_battle[x][y] = 'X';
-	else
+		pmap->matrix_battle[x][y] = 'X';
+	}
+	else if(pmap->matrix_battle[x][y] == '0')
+	{
 		pvisual_map->matrix_battle[x][y] = 'x';
+		pmap->matrix_battle[x][y] = 'x';
+	}
 }
 
 
@@ -671,6 +676,53 @@ void EnemyHit(int shot[2], char matrix_hits[FIELDSIZE][FIELDSIZE], int hijacking
 
 
 
+//Additionan weapons
+int EnemyTorpedo(BattleShip *pbattle_ship, Cruiser *pcruiser, Destroyer *pdestroyer, TorpedoBoat *ptorpedo_boat, Map *pmap, char matrix_hits[FIELDSIZE][FIELDSIZE], int row)
+{
+	for(int j = 0; j < FIELDSIZE; ++j)
+		if(pmap->matrix_battle[row][j] == '+')
+		{
+			int shot[2] = {row, j};
+			int res =  ChangeHealthShip(pbattle_ship, pcruiser, pdestroyer, ptorpedo_boat, pmap, shot);
+			pmap->matrix_battle[row][j] = 'X';
+			matrix_hits[row][j] = 'x';
+			return res;
+		}
+		else if(pmap->matrix_battle[row][j] == '0')
+		{
+			pmap->matrix_battle[row][j] = 'x';
+			matrix_hits[row][j] = 'x';
+		}
+	return 0;
+}
+
+
+int UserTorpedo(BattleShip *pbattle_ship, Cruiser *pcruiser, Destroyer *pdestroyer, TorpedoBoat *ptorpedo_boat, Map *pmap, Map *pvisual_map, int row)
+{
+	if(row < 0 || row > 9)
+	{
+		printf("Line out of range (0-9)!\n");
+		return 0;
+	}
+	for(int j = 0; j < FIELDSIZE; ++j)
+		if(pmap->matrix_battle[row][j] == '+')
+		{
+			int shot[2] = {row, j};
+			int res =  ChangeHealthShip(pbattle_ship, pcruiser, pdestroyer, ptorpedo_boat, pmap, shot);
+			pmap->matrix_battle[row][j] = 'X';
+			pvisual_map->matrix_battle[row][j] = 'x';
+			return res;
+		}
+		else if(pmap->matrix_battle[row][j] == '0')
+		{
+			pvisual_map->matrix_battle[row][j] = 'x';
+			pmap->matrix_battle[row][j] = 'x';
+		}
+	return 0;
+}
+
+
+
 
 int main()
 {
@@ -681,7 +733,6 @@ int main()
 	Cruiser user_cruiser[2];
 	Destroyer user_destroyer[3];
 	TorpedoBoat user_torpedo_boat[4];
-
 
 	Map enemy_map;
 	Map enemy_visual_map; //for incapsulation data of position the enemy ships
@@ -713,26 +764,26 @@ int main()
 	}
 	PrintMap(&enemy_map);
 
-	
+/*
 	//Alignment ships by the user
 	printf("Each coorinates line enter with new line\n");
 	printf("Please enter four coordinates for one battle ship to formate A1A2A3A4:\n");
 		
 	for(int i = 0; i < COUNTFOURDECK; ++i)
 	{
-		char col;
-		int row;
+		char row;
+		int col;
 	
 		for(int j = 0; j < 4; ++j)
 		{
 			user_battle_ship[i].health[j] = 1;
 
-			if(scanf("%c%d", &col, &row)!= 2)
+			if(scanf("%c%d", &row, &col)!= 2)
 			{
 				printf("Error input!\n");
 				return 0;
 			}
-			if(OutOfRange(CharToIndex(toupper(col)), row))
+			if(OutOfRange(CharToIndex(toupper(row)), col))
 			{
 				printf("Coordinate out of range!\n");
 				return 0;
@@ -740,8 +791,8 @@ int main()
 			else
 			{
 				//printf("[%c, %d]\n", col, row);
-				user_battle_ship[i].coordinate[j][0] = CharToIndex(toupper(col));
-				user_battle_ship[i].coordinate[j][1] = row;
+				user_battle_ship[i].coordinate[j][0] = CharToIndex(toupper(row));
+				user_battle_ship[i].coordinate[j][1] = col;
 			}
 		}
 		getchar(); //for \n
@@ -751,19 +802,19 @@ int main()
 
 	for(int i = 0; i < COUNTTHREEDECK; ++i)
 	{
-		char col;
-		int row;
+		char row;
+		int col;
 
 		for(int j = 0; j < 3; ++j)
 		{
 			user_cruiser[i].health[j] = 1;
 
-			if(scanf("%c%d", &col, &row)!= 2)
+			if(scanf("%c%d", &row, &col)!= 2)
 			{
 				printf("Error input!\n");
 				return 0;
 			}
-			if(OutOfRange(CharToIndex(toupper(col)), row))
+			if(OutOfRange(CharToIndex(toupper(row)), col))
 			{
 				printf("Coordiante out of range!\n");
 				return 0;
@@ -771,8 +822,8 @@ int main()
 			else
 			{
 				//printf("[%c, %d]\n", col, row);
-				user_cruiser[i].coordinate[j][0] = CharToIndex(toupper(col));
-				user_cruiser[i].coordinate[j][1] = row;
+				user_cruiser[i].coordinate[j][0] = CharToIndex(toupper(row));
+				user_cruiser[i].coordinate[j][1] = col;
 			}
 		}
 		getchar();
@@ -782,19 +833,19 @@ int main()
 
 	for(int i = 0; i < COUNTTWODECK; ++i)
 	{
-		char col;
-		int row;
+		char row;
+		int col;
 
 		for(int j = 0; j < 2; ++j)
 		{
 			user_destroyer[i].health[j] = 1;
 
-			if(scanf("%c%d", &col, &row)!= 2)
+			if(scanf("%c%d", &row, &col)!= 2)
 			{
 				printf("Error input!\n");
 				return 0;
 			}
-			if(OutOfRange(CharToIndex(toupper(col)), row))
+			if(OutOfRange(CharToIndex(toupper(row)), col))
 			{
 				printf("Coordinate out of range!\n");
 				return 0;
@@ -802,8 +853,8 @@ int main()
 			else
 			{
 				//printf("[%c, %d]\n", col, row);
-				user_destroyer[i].coordinate[j][0] = CharToIndex(toupper(col));
-				user_destroyer[i].coordinate[j][1] = row;
+				user_destroyer[i].coordinate[j][0] = CharToIndex(toupper(row));
+				user_destroyer[i].coordinate[j][1] = col;
 			}
 		}
 		getchar();
@@ -813,19 +864,19 @@ int main()
 
 	for(int i = 0; i < COUNTONEDECK; ++i)
 	{
-		char col;
-		int row;
+		char row;
+		int col;
 
 		for(int j = 0; j < 1; ++j)
 		{
 			user_torpedo_boat[i].health[j] = 1;
 
-			if(scanf("%c%d", &col, &row)!= 2)
+			if(scanf("%c%d", &row, &col)!= 2)
 			{
 				printf("Error input!\n");
 				return 0;
 			}
-			if(OutOfRange(CharToIndex(toupper(col)), row))
+			if(OutOfRange(CharToIndex(toupper(row)), col))
 			{
 				printf("Coordinate out of range!\n");
 				return 0;
@@ -833,8 +884,8 @@ int main()
 			else
 			{
 				//printf("[%c, %d]\n", col, row);
-				user_torpedo_boat[i].coordinate[j][0] = CharToIndex(toupper(col));
-				user_torpedo_boat[i].coordinate[j][1] = row;
+				user_torpedo_boat[i].coordinate[j][0] = CharToIndex(toupper(row));
+				user_torpedo_boat[i].coordinate[j][1] = col;
 			}
 		}
 		getchar();
@@ -861,11 +912,13 @@ int main()
 		printf("Incorrect coordinates of ships!\n");
 		return 0;
 	}
-	
-	
+
+*/
 	//Battle progress
 	int count_user_ships = 10;
 	int count_enemy_ships = 10;
+	int count_user_torpedo = 1; //additional weapons x1
+	int count_enemy_torpedo = 1; //additional weapons x1
 	int user_hit = 1; 
 	int enemy_hit = 0; 
 	char matrix_hits[FIELDSIZE][FIELDSIZE]; //matrix for coordinates, which computer already select
@@ -874,21 +927,36 @@ int main()
 	InitializeMatrixHits(matrix_hits);
 	srand(time(NULL));
 
-	while(count_user_ships && count_enemy_ships)
-	{
-		int row;
-		char col;
-		int shot[2];
+	printf("Manuals for using weapons\n");
+	printf("For using torpedo choise row and enter T<value>\n");
 
+	while(count_user_ships > 0 && count_enemy_ships > 0)
+	{
+		int col;
+		char row;
+		int shot[2];
+		
 		if(enemy_hit)
 		{
-			EnemyHit(shot, &matrix_hits[0], hijacking_flag);
-			printf("Enemy shot:%c%u\n", rows[shot[0]], shot[1]);
-			MarkShotOnMap(&user_map, shot);
-			printf("User map:\n");
-			PrintMap(&user_map);
-
-			int course_res = ChangeHealthShip(&user_battle_ship[0], &user_cruiser[0], &user_destroyer[0], &user_torpedo_boat[0],shot);
+			int course_res; //for save result which return UseTorpedo() or ChangeHealthShips()
+			//Use torpedo
+			if(rand() % 4 == 1 && count_enemy_torpedo == 1)
+			{
+				printf("Enemy used torpedo!\n");
+				course_res = EnemyTorpedo(&user_battle_ship[0], &user_cruiser[0], &user_destroyer[0], &user_torpedo_boat[0], &user_map, matrix_hits, rand() % 10);
+				printf("User map:\n");
+				PrintMap(&user_map);
+				--count_enemy_torpedo;
+			}
+			else
+			{	
+				EnemyHit(shot, &matrix_hits[0], hijacking_flag);
+				printf("Enemy shot:%c%u\n", rows[shot[0]], shot[1]);
+				course_res = ChangeHealthShip(&user_battle_ship[0], &user_cruiser[0], &user_destroyer[0], &user_torpedo_boat[0], &user_map, shot);
+				MarkShotOnMap(&user_map, shot);
+				printf("User map:\n");
+				PrintMap(&user_map);
+			}
 			if(course_res == DESTROYED)
 			{
 				printf("Enemy destroyed your ship!\n");
@@ -896,7 +964,6 @@ int main()
 				MarkSpaceAroundDestroyedShip(&user_battle_ship[0], &user_cruiser[0], &user_destroyer[0], &user_torpedo_boat[0], &user_map);
 				MarkSpaceAroundCoordinateInMatrixHits(&user_battle_ship[0], &user_cruiser[0], &user_destroyer[0], &user_torpedo_boat[0], matrix_hits);
 			}
-
 			else if(course_res == HIJACKING)
 			{
 				printf("Enemy hijacking in your ship!\n");
@@ -906,36 +973,47 @@ int main()
 			{
 				hijacking_flag = 0;
 				enemy_hit = 0; 
-				user_hit = 1;
+				user_hit = 1; 
 			}
-			
-			
 		}
 		if(user_hit)
 		{
+			int course_res; //for save return of UseTorpedo() or ChangeHealthShip()
 			printf("Enter coordinate of hit in format A1\n");
-			if(scanf("%c%d", &col, &row)!= 2)
+			if(scanf("%c%d", &row, &col)!= 2 && toupper(row)!= 'T')
 			{	
-				printf("%c%d\n", col, row);
+				printf("%c%d\n", row, col);
 				printf("Incorrect coordinate!\n");
 				return 0;
 			}
 			getchar();
-		
-			shot[0] = CharToIndex(toupper(col));
-			shot[1] = row;
-			if(OutOfRange(shot[0], shot[1]))
+			
+			//Use torpedo
+			if(count_user_torpedo == 1 && toupper(row) == 'T' && col < 10 && col >= 0)
 			{
-				printf("(%d, %d)\n", shot[0], shot[1]);
-				return 0;
+				printf("You used torpedo!\n");
+				course_res = UserTorpedo(&enemy_battle_ship[0], &enemy_cruiser[0], &enemy_destroyer[0], &enemy_torpedo_boat[0], &enemy_map, &enemy_visual_map, col);
+				printf("Enemy map:\n");
+				PrintMap(&enemy_visual_map);
+				--count_user_torpedo;
 			}
+			else
+			{
+				shot[0] = CharToIndex(toupper(row));
+				shot[1] = col;
+				if(OutOfRange(shot[0], shot[1]))
+				{
+					printf("(%d, %d)\n", shot[0], shot[1]);
+					return 0;
+				}
 		
-			MarkShotOnEnemyMap(&enemy_map, &enemy_visual_map, shot); 
-			printf("Enemy map:\n");
-			PrintMap(&enemy_visual_map);
-
 			//variable for check shot to hikacking to ship or destroyed to ship
-			int course_res = ChangeHealthShip(&enemy_battle_ship[0], &enemy_cruiser[0], &enemy_destroyer[0], &enemy_torpedo_boat[0],shot);
+				course_res = ChangeHealthShip(&enemy_battle_ship[0], &enemy_cruiser[0], &enemy_destroyer[0], &enemy_torpedo_boat[0], &enemy_map, shot);
+				MarkShotOnEnemyMap(&enemy_map, &enemy_visual_map, shot);
+				printf("Enemy map:\n");
+				PrintMap(&enemy_visual_map);
+
+			}
 			if(course_res == DESTROYED)
 			{
 				--count_enemy_ships;
@@ -947,16 +1025,16 @@ int main()
 				printf("--------\nHijackig!\n---------\n");
 			else
 			{
-				user_hit = 0;
-				enemy_hit = 1;
+			//	user_hit = 0; //test user win
+			//	enemy_hit = 1; //test user win
 			}
 		}
 	}
-	
 	if(!count_enemy_ships)
 		printf("--------\nYou win!\n---------");
 	else if(!count_user_ships)
 		printf("--------\nYou lose\n---------");
+
 
 	return 0;
 }
