@@ -764,7 +764,7 @@ int main()
 	}
 	PrintMap(&enemy_map);
 
-/*
+
 	//Alignment ships by the user
 	printf("Each coorinates line enter with new line\n");
 	printf("Please enter four coordinates for one battle ship to formate A1A2A3A4:\n");
@@ -913,7 +913,6 @@ int main()
 		return 0;
 	}
 
-*/
 	//Battle progress
 	int count_user_ships = 10;
 	int count_enemy_ships = 10;
@@ -1025,8 +1024,8 @@ int main()
 				printf("--------\nHijackig!\n---------\n");
 			else
 			{
-			//	user_hit = 0; //test user win
-			//	enemy_hit = 1; //test user win
+				user_hit = 0;
+				enemy_hit = 1; 
 			}
 		}
 	}
